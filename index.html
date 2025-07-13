@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>최종 정산 계산기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-xl">
+    <h1 class="text-2xl font-bold text-center text-blue-700 mb-6">📊 최종 정산 계산기</h1>
+
+    <!-- 원금 -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">💰 원금 (₩)</label>
+      <input type="text" id="principal"
+        placeholder="예: 1,000,000"
+        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+    </div>
+
+    <!-- 이자율 -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">📉 이자율 (%)</label>
+      <input type="number" id="interestRate" value="1.66" step="0.01"
+        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+    </div>
+
+    <!-- 추가 항목 -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-2">➕ 추가 항목</label>
+      <div id="items" class="space-y-2">
+        <div class="flex gap-2">
+          <input type="text" placeholder="항목 이름" class="item-name w-1/2 p-2 border rounded-md" />
+          <input type="text" placeholder="금액" class="item-cost w-1/2 p-2 border rounded-md" />
+        </div>
+      </div>
+      <button onclick="addItem()"
+        class="mt-2 px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition">+ 항목 추가</button>
+    </div>
+
+    <!-- 계산 버튼 -->
+    <div class="text-center mt-6">
+      <button onclick="calculate()"
+        class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg transition">
+        계산하기
+      </button>
+    </div>
+
+    <!-- 결과 -->
+    <div id="result" class="mt-6 bg-gray-50 border border-blue-200 p-4 rounded-lg hidden">
+      <h2 class="text-lg font-bold text-blue-600 mb-2">📌 정산 결과</h2>
+      <div id="resultDetails" class="text-gray-700 space-y-1 text-sm"></div>
+      <div class="mt-3 font-bold text-green-600 text-xl" id="finalAmount"></div>
+	<div class="mt-3 text-right">
+	  <button onclick="copyResult()"
+		class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-gray-800 transition">📋 결과 복사하기</button>
+	</div>
+    </div>
+  </div>
+
+  <script>
+  function copyResult() {
+  const resultEl = document.getElementById("resultDetails");
+  const finalAmount = document.getElementById("finalAmount").textContent;
+  const tempEl = document.createElement("textarea");
+
+  // HTML → 텍스트 변환용
+  const textContent = resultEl.innerText + '\n' + finalAmount;
+
+  tempEl.value = textContent;
+  document.body.appendChild(tempEl);
+  tempEl.select();
+  document.execCommand("copy");
+  document.body.removeChild(tempEl);
+
+  // 알림
+  alert("📋 정산 결과가 복사되었습니다!");
+}
+
+    function formatNumberInput(e) {
+      const input = e.target;
+      const cursorPosition = input.selectionStart;
+      const originalLength = input.value.length;
+
+      const numericOnly = input.value.replace(/[^\d]/g, '');
+      if (numericOnly === '') {
+        input.value = '';
+        return;
+      }
+
+      const formatted = Number(numericOnly).toLocaleString();
+      input.value = formatted;
+
+      const newLength = formatted.length;
+      const diff = newLength - originalLength;
+      input.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
+    }
+
+    function bindFormatEvents() {
+      const inputs = document.querySelectorAll('#principal, .item-cost');
+      inputs.forEach(input => {
+        input.removeEventListener('input', formatNumberInput);
+        input.addEventListener('input', formatNumberInput);
+      });
+    }
+
+    function unformatNumber(str) {
+      return parseFloat(str.replace(/,/g, '')) || 0;
+    }
+
+	function addItem() {
+	  const container = document.getElementById("items");
+	  const div = document.createElement("div");
+	  div.className = "flex gap-2 items-center group";
+
+	  div.innerHTML = `
+		<input type="text" placeholder="항목 이름" class="item-name w-1/2 p-2 border rounded-md" />
+		<input type="text" placeholder="금액" class="item-cost w-1/2 p-2 border rounded-md" />
+		<button type="button" class="text-red-500 text-lg font-bold px-2 hover:text-red-700" onclick="removeItem(this)">❌</button>
+	  `;
+
+	  container.appendChild(div);
+	  bindFormatEvents();
+	}
+	function removeItem(button) {
+	  const itemRow = button.parentElement;
+	  itemRow.remove();
+	}
+
+    function calculate() {
+      const principal = unformatNumber(document.getElementById("principal").value);
+      const interestRate = parseFloat(document.getElementById("interestRate").value) || 0;
+
+      const itemNames = document.querySelectorAll(".item-name");
+      const itemCosts = document.querySelectorAll(".item-cost");
+
+      let totalExtra = 0;
+      let details = "";
+
+      for (let i = 0; i < itemCosts.length; i++) {
+        const name = itemNames[i].value || `항목${i + 1}`;
+        const cost = unformatNumber(itemCosts[i].value);
+        totalExtra += cost;
+        details += `<div>🔹 ${name}: ₩${cost.toLocaleString()}</div>`;
+      }
+
+      const interest = principal * (interestRate / 100);
+      const final = principal - interest - totalExtra;
+
+      document.getElementById("result").classList.remove("hidden");
+      document.getElementById("resultDetails").innerHTML = `
+        💰 원금: ₩${principal.toLocaleString()}<br/>
+        📉 이자 (${interestRate}%): ₩${interest.toLocaleString()}<br/>
+        ${details}
+      `;
+      document.getElementById("finalAmount").textContent = `✅ 최종 금액: ₩${final.toLocaleString()}`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      bindFormatEvents();
+    });
+  </script>
+</body>
+</html>
