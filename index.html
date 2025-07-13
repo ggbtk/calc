@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -14,6 +15,8 @@
     <div class="mb-4">
       <label class="block font-semibold mb-1">💰 원금 (₩)</label>
       <input type="text" id="principal"
+		  inputmode="numeric"
+		  pattern="\d*"
         placeholder="예: 1,000,000"
         class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
     </div>
@@ -31,7 +34,7 @@
       <div id="items" class="space-y-2">
         <div class="flex gap-2">
           <input type="text" placeholder="항목 이름" class="item-name w-1/2 p-2 border rounded-md" />
-          <input type="text" placeholder="금액" class="item-cost w-1/2 p-2 border rounded-md" />
+          <input type="text" placeholder="금액" inputmode="numeric" pattern="\d*" class="item-cost w-1/2 p-2 border rounded-md" />
         </div>
       </div>
       <button onclick="addItem()"
